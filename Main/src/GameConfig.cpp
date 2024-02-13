@@ -50,19 +50,12 @@ void GameConfig::SetKeyBinding(GameConfigKeys key, Graphics::Key value)
 }
 String GameConfig::GetDefaultDataFolder(){
         auto basePath = SDL_GetPrefPath("USC-Game","Data");
-        if(!Path::IsDirectory(basePath)){
-                Path::CreateDirRecursive(basePath);
-        }
         return basePath;
 }
 void GameConfig::InitDefaults()
 {
         String basePath = GetDefaultDataFolder();
         Set(GameConfigKeys::DataFolder,basePath);
-        std::string songsPath = basePath + std::string("Songs");
-        if(!Path::IsDirectory(songsPath)){
-                Path::CreateDirRecursive(songsPath);
-        }
  
 	// Do not set ConfigVersion to GameConfig::VERSION here. It will cause problems for config files with no ConfigVersion field.
 	// For a new config, ConfigVersion will be set to the appropriate value in Application::m_LoadConfig.

@@ -991,25 +991,67 @@ bool Application::m_Init()
 			}
 		}
 	}
-	if(Path::gameDir.empty())
-	{
-		Path::gameDir = g_gameConfig.GetString(GameConfigKeys::DataFolder);
-	}
-	//Create the data folders if they doesn't exist
-	std::list<String> requiredDirectories = {"crash_dumps","replays","screenshots", "skins", "fonts", "audio", "LightPlugins" };
-	String executableDir = Path::RemoveLast(Path::GetExecutablePath());
-	for(auto directory : requiredDirectories)
-	{
-		auto sourceDir = Utility::Sprintf("%s%c%s", executableDir, Path::sep, directory);
-		String destDir = Path::Absolute(directory);
-		if (!Path::IsDirectory(destDir))
-		{
-			Logf("%s does not yet exist. Creating...", Logger::Severity::Info, *destDir);
-			auto response = Path::CopyDirUnsafe(sourceDir, destDir);
-			if (response == 1) {
+	if(Path::gameDir.empty()){
+		//Create the data folders if they doesn't exist
+		std::list<String> requiredDirectories = {"crash_dumps","replays","screenshots", "skins", "fonts", "audio", "LightPlugins" };
+		String executableDir = Path::RemoveLast(Path::GetExecutablePath());\
+		char* xdgDataDir = std::getenv("XDG_DATA_HOME");
+
+		if (xdgDataDir) {
+			String gameDir = Utility::Sprintf("%s%c%s", xdgDataDir, Path::sep, "unnamed-sdvx-clone");
+			auto gameDataSourceDir = Path::RemoveLast(Path::GetExecutablePath());
+			String xdgDataDirs(std::getenv("XDG_DATA_DIRS"));
+			// iterate over XDG_DATA_DIRS and look for a folder with the correct name
+			// if it exists, overwrite gameDataSourceDir with it and break
+			std::stringstream ss (xdgDataDirs);
+			String dir;
+			while (getline (ss, dir, ':')) {
+				String fullDir = Utility::Sprintf("%s%c%s", dir, Path::sep, "unnamed-sdvx-clone");
+				if (Path::IsDirectory(fullDir)) {
+					gameDataSourceDir = fullDir;
+					break;
+				}
+			}
+			Path::gameDir = gameDir;
+			if (!Path::IsDirectory(gameDir)) {
+				Logf("%s does not yet exist. Creating...", Logger::Severity::Info, *gameDir);
+				auto response = Path::CreateDir(gameDir);
+				if (response == 1) {
+					Logf("Created: %s", Logger::Severity::Info, *gameDir, response);
+				} else {
+					Logf("Failed creating directory %s. The game will probably crash soon.", Logger::Severity::Info, *gameDir, response);
+				}
+				for (String directory : requiredDirectories) {
+					auto sourceDir = Utility::Sprintf("%s%c%s", gameDataSourceDir, Path::sep, directory);
+					auto destDir = Path::Absolute(directory);
+					response = Path::CopyDir(sourceDir, destDir);
+					if (response == 1) {
 						Logf("Copied: %s to %s", Logger::Severity::Info, *sourceDir, *destDir, response);
 					} else {
 						Logf("Failed copying %s to %s. The game will probably crash soon.", Logger::Severity::Error, *sourceDir, *destDir, response);
+					}
+				}
+			} else {
+				gameDir = GameConfig::GetDefaultDataFolder();
+				if(!Path::IsDirectory(gameDir)){
+					Path::CreateDirRecursive(gameDir);
+				}
+				Path::gameDir = gameDir;
+				for(auto directory : requiredDirectories)
+				{
+					auto sourceDir = Utility::Sprintf("%s%c%s", executableDir, Path::sep, directory);
+					String destDir = Path::Absolute(directory);
+					if (!Path::IsDirectory(destDir))
+					{
+						Logf("%s does not yet exist. Creating...", Logger::Severity::Info, *destDir);
+						auto response = Path::CopyDirUnsafe(sourceDir, destDir);
+						if (response == 1) {
+									Logf("Copied: %s to %s", Logger::Severity::Info, *sourceDir, *destDir, response);
+								} else {
+									Logf("Failed copying %s to %s. The game will probably crash soon.", Logger::Severity::Error, *sourceDir, *destDir, response);
+								}
+					}
+				}
 			}
 		}
 	}

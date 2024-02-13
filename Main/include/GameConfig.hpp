@@ -13,9 +13,9 @@
 DefineEnum(GameConfigKeys,
 		   // Version of the config
 		   ConfigVersion,
-                   
-                   //Global Storage Configuration
-                   DataFolder,
+		   
+		   //Global Storage Configuration
+		   DataFolder,
 
 		   // Screen settings
 		   ScreenWidth,
@@ -296,7 +296,7 @@ DefineEnum(QualityLevel,
 	class GameConfig : public Config<Enum_GameConfigKeys>
 {
 public:
-        String GetDefaultDataFolder();
+    static String GetDefaultDataFolder();
 	GameConfig();
 	void SetKeyBinding(GameConfigKeys key, Key value);
 
